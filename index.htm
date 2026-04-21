@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Literatura - Robinson Crusoé & Cordel</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #e67e22;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --correct: #27ae60;
+            --wrong: #c0392b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #quiz-container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 { text-align: center; color: var(--primary-color); font-size: 1.5rem; }
+
+        .question { font-size: 1.2rem; margin-bottom: 1.5rem; color: #333; font-weight: 600; }
+
+        .options-container { display: flex; flex-direction: column; gap: 10px; }
+
+        .option-btn {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background-color: #f0f0f0;
+            border-color: var(--accent-color);
+        }
+
+        .correct { background-color: var(--correct) !important; color: white; border-color: var(--correct) !important; }
+        .wrong { background-color: var(--wrong) !important; color: white; border-color: var(--wrong) !important; }
+
+        #feedback { margin-top: 15px; font-weight: bold; min-height: 20px; }
+
+        #next-btn {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+        }
+
+        #score-screen { text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div id="quiz-content">
+        <h1 id="category-title">Atividade de Português</h1>
+        <div id="question-text" class="question">Carregando pergunta...</div>
+        <div id="options" class="options-container"></div>
+        <div id="feedback"></div>
+        <button id="next-btn">Próxima Pergunta</button>
+    </div>
+
+    <div id="score-screen">
+        <h2>Fim do Teste!</h2>
+        <p id="final-score"></p>
+        <button onclick="location.reload()" style="padding: 10px 20px; cursor: pointer;">Reiniciar Atividade</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        // QUESTÕES ANTERIORES
+        { q: "Qual evento isola Robinson Crusoé em uma ilha?", options: ["Naufrágio", "Banimento", "Fuga de piratas", "Abandono"], correct: 0 },
+        { q: "Qual o nome do nativo que Crusoé resgata?", options: ["Sexta-Feira", "Domingo", "Esperança", "Daniel"], correct: 0 },
+        { q: "De onde Crusoé tira seus primeiros suprimentos?", options: ["Caverna", "Destroços do navio", "Da mata", "De uma tribo"], correct: 1 },
+        { q: "Qual o conflito interno principal de Crusoé?", options: ["Fé vs Desespero", "Medicina", "Família", "Recursos"], correct: 0 },
+        { q: "Como ele marcava a passagem do tempo?", options: ["Relógio", "Entalhes numa cruz", "Fases da lua", "Conchas"], correct: 1 },
+        { q: "Elemento indispensável na aventura:", options: ["Romance", "Desafios/Obstáculos", "Final triste", "Sem vilões"], correct: 1 },
+        { q: "O tempo na narrativa de aventura é:", options: ["Estático", "Lento", "Cronológico/Dinâmico", "Psicológico"], correct: 2 },
+        { q: "Narrador comum em aventuras clássicas:", options: ["Protagonista", "Observador neutro", "Vilão", "Objeto"], correct: 0 },
+        { q: "Origem do nome 'Cordel':", options: ["Papel de corda", "Autor chamado Cordel", "Expostos em cordas", "Nós de marinheiro"], correct: 2 },
+        { q: "Técnica de ilustração do Cordel:", options: ["Óleo", "Xilogravura", "Fotografia", "Aquarela"], correct: 1 },
+        
+        // NOVAS QUESTÕES DE GRAMÁTICA
+        { 
+            q: "Na frase 'UM marinheiro encontrou A ilha', as palavras destacadas são:", 
+            options: ["Artigo indefinido e Artigo definido", "Numeral e Substantivo", "Interjeição e Verbo", "Artigo definido e Numeral"], 
+            correct: 0 
+        },
+        { 
+            q: "Em 'Ele sobreviveu por VINTE E OITO anos', a palavra em destaque é um:", 
+            options: ["Artigo", "Numeral cardinal", "Numeral ordinal", "Interjeição"], 
+            correct: 1 
+        },
+        { 
+            q: "Qual das frases abaixo apresenta uma INTERJEIÇÃO expressando alívio?", 
+            options: ["O navio partiu.", "Ufa! Finalmente terra firme.", "Dois homens saltaram.", "A ilha é bela."], 
+            correct: 1 
+        }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const qText = document.getElementById('question-text');
+    const optionsBox = document.getElementById('options');
+    const feedback = document.getElementById('feedback');
+    const nextBtn = document.getElementById('next-btn');
+
+    function loadQuestion() {
+        resetState();
+        let q = questions[currentQuestion];
+        qText.innerText = `${currentQuestion + 1}. ${q.q}`;
+        
+        q.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.innerText = opt;
+            btn.classList.add('option-btn');
+            btn.onclick = () => selectOption(btn, index);
+            optionsBox.appendChild(btn);
+        });
+    }
+
+    function resetState() {
+        feedback.innerText = '';
+        nextBtn.style.display = 'none';
+        optionsBox.innerHTML = '';
+    }
+
+    function selectOption(btn, index) {
+        const correctIdx = questions[currentQuestion].correct;
+        const allButtons = document.querySelectorAll('.option-btn');
+        
+        allButtons.forEach(b => b.disabled = true);
+
+        if (index === correctIdx) {
+            btn.classList.add('correct');
+            feedback.innerText = "Correto! ✨";
+            score++;
+        } else {
+            btn.classList.add('wrong');
+            allButtons[correctIdx].classList.add('correct');
+            feedback.innerText = "Resposta incorreta.";
+        }
+        nextBtn.style.display = 'block';
+    }
+
+    nextBtn.onclick = () => {
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+            loadQuestion();
+        } else {
+            showScore();
+        }
+    };
+
+    function showScore() {
+        document.getElementById('quiz-content').style.display = 'none';
+        const scoreScreen = document.getElementById('score-screen');
+        scoreScreen.style.display = 'block';
+        document.getElementById('final-score').innerText = `Você acertou ${score} de ${questions.length} questões!`;
+    }
+
+    loadQuestion();
+</script>
+
+</body>
+</html>
